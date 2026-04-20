@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализ отзывов — Вход</title>
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Onest', sans-serif;
+            background-color: #f1f5f9;
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+        }
+        .card {
+            background: #ffffff;
+            border: none;
+            border-radius: 20px;
+            padding: 48px 40px;
+            width: 100%; max-width: 420px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        .logo-circle {
+            width: 64px; height: 64px;
+            background: rgba(59,130,246,.1);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #3b82f6; font-size: 28px; margin: 0 auto 24px;
+        }
+        h1 { font-size: 24px; font-weight: 700; color: #0f172a; text-align: center; margin-bottom: 8px; }
+        .sub { font-size: 14px; color: #64748b; text-align: center; margin-bottom: 32px; }
+        
+        .field { margin-bottom: 20px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 8px; }
+        input {
+            width: 100%; padding: 14px 16px;
+            background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 10px; color: #0f172a; font-size: 15px;
+            font-family: inherit; outline: none; transition: border-color .2s;
+        }
+        input:focus { border-color: #3b82f6; background: #fff; }
+        
+        .btn {
+            width: 100%; padding: 14px;
+            background: #3b82f6; color: #fff;
+            border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 600; font-family: inherit;
+            cursor: pointer; margin-top: 8px; transition: background .2s;
+        }
+        .btn:hover { background: #2563eb; }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        
+        .msg { margin-top: 16px; padding: 12px 14px; border-radius: 8px; font-size: 13px; display: none; text-align: center;}
+        .msg.error { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+        .msg.success { background: #f0fdf4; color: #22c55e; border: 1px solid #bbf7d0; }
+        
+        .hint { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo-circle"><i class="fa-solid fa-chart-line"></i></div>
+    <h1>Анализ отзывов</h1>
+    <p class="sub">Вход для маркетингового аналитика</p>
+
+    <div class="field">
+        <label>Логин</label>
+        <input id="email" type="text" placeholder="e" value="user" autocomplete="username">
+    </div>
+    <div class="field">
+        <label>Пароль</label>
+        <input id="password" type="password" placeholder="••••••••" value="user" autocomplete="current-password">
+    </div>
+
+    <button class="btn" id="loginBtn" onclick="doLogin()">Войти в систему</button>
+    <div class="msg" id="msg"></div>
+
+    <div class="hint">Доступ только для авторизованных сотрудников.</div>
+</div>
+
+<script>
+    if (localStorage.getItem('token')) window.location.href = '/dashboard';
+
+    async function doLogin() {
+        const btn = document.getElementById('loginBtn');
+        const msg = document.getElementById('msg');
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!email || !password) { showMsg('Заполните все поля', 'error'); return; }
+
+        btn.disabled = true; btn.textContent = 'Проверка...'; msg.style.display = 'none';
+
+        try {
+            const res = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                localStorage.setItem('token', data.access_token);
+                localStorage.setItem('user_email', data.email);
+                showMsg('Вход выполнен, перенаправление…', 'success');
+                setTimeout(() => window.location.href = '/dashboard', 600);
+            } else {
+                showMsg(data.message || 'Ошибка входа', 'error');
+                btn.disabled = false; btn.textContent = 'Войти в систему';
+            }
+        } catch (e) {
+            showMsg('Ошибка соединения с сервером', 'error');
+            btn.disabled = false; btn.textContent = 'Войти в систему';
+        }
+    }а
+
+    function showMsg(text, type) {
+        const el = document.getElementById('msg');
+        el.textContent = text; el.className = `msg ${type}`; el.style.display = 'block';
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>

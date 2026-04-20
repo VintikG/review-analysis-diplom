@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналитика товаров - AI Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body { background-color: #f1f5f9; font-family: 'Onest', sans-serif; overflow-x: hidden; color: #1e293b; }
+        
+        /* 1. SIDEBAR */
+        .sidebar { width: 280px; height: 100vh; background-color: #0f172a; color: #f8fafc; position: fixed; top: 0; left: 0; padding-top: 20px; overflow-y: auto; }
+        .main-content { margin-left: 280px; padding: 30px; }
+        .nav-link { color: #94a3b8; padding: 10px 20px; border-radius: 8px; font-weight: 500; margin: 0 15px 5px; transition: 0.2s; }
+        .nav-link:hover, .nav-link.active { background-color: #1e293b; color: #fff; }
+        
+        .sidebar-divider { border-top: 1px solid #334155; margin: 15px 20px; }
+        .sidebar-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; padding: 0 20px; margin-bottom: 10px; font-weight: 700; }
+
+        .catalog-accordion .accordion-item { background-color: transparent; border: none; }
+        .catalog-accordion .accordion-button { background-color: transparent; color: #cbd5e1; padding: 8px 20px; font-weight: 600; box-shadow: none; font-size: 0.95rem; }
+        .catalog-accordion .accordion-button:not(.collapsed) { color: #38bdf8; background-color: transparent; }
+        .catalog-accordion .accordion-button::after { filter: invert(1) grayscale(100%) brightness(200%); transform: scale(0.8); }
+        .catalog-accordion .accordion-body { padding: 5px 0 10px 20px; display: flex; flex-direction: column; gap: 2px;}
+        
+        .product-link { color: #94a3b8; text-decoration: none; padding: 6px 15px; border-radius: 6px; font-size: 0.85rem; margin-right: 15px; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .product-link:hover { color: #fff; background-color: #1e293b; }
+        .product-link.active { color: #fff; background-color: #2563eb; font-weight: 600; }
+
+        /* 2. MAIN AREA */
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px; }
+        .card-header-custom { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
+        
+        .asp-item { margin-bottom: 10px; }
+        .asp-meta { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+        .asp-track { height: 8px; background: #e2e8f0; border-radius: 4px; display: flex; overflow: hidden; }
+
+        /* Review Grid */
+        .rev-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;}
+        
+        .rev-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        @media (max-width: 1100px) { .rev-grid { grid-template-columns: 1fr; } }
+
+        .rev-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; background: #fff; display: flex; flex-direction: column;}
+        .rev-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .rev-author { font-weight: 700; font-size: 1.05rem; }
+        .rev-date { color: #64748b; font-size: 0.8rem; }
+        .rev-text { font-size: 1.05rem; line-height: 1.6; color: #334155; margin-bottom: 15px; flex-grow: 1;}
+        
+        .hl-pos { background-color: #dcfce7; color: #166534; padding: 2px 4px; border-radius: 4px; }
+        .hl-neg { background-color: #fee2e2; color: #991b1b; padding: 2px 4px; border-radius: 4px; }
+        .badge-aspect { font-size: 0.8rem; padding: 5px 8px; font-weight: 600; margin-right: 5px; margin-bottom: 5px; display: inline-block;}
+        
+        .empty-state { text-align: center; padding: 40px; color: #94a3b8; font-weight: 500; grid-column: 1 / -1; }
+        .stat-circle { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px;}
+
+        /* Центр круговой диаграммы */
+        .pie-container { position: relative; height: 180px; display: flex; justify-content: center; align-items: center; }
+        .pie-center-text { position: absolute; text-align: center; pointer-events: none; }
+        .pie-center-value { font-size: 2rem; font-weight: 700; color: #1e293b; line-height: 1; }
+        .pie-center-label { font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. SIDEBAR -->
+    <div class="sidebar">
+        <!-- <h4 class="text-center fw-bold mb-4 px-3 text-white"><i class="fa-solid fa-brain text-primary me-2"></i>AI Analytics</h4> -->
+        <nav class="nav flex-column mb-3">
+            <a class="nav-link" href="/upload"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Загрузка CSV</a>
+            <a class="nav-link active" href="/dashboard"><i class="fa-solid fa-chart-pie me-2"></i> Аналитика отзывов</a>
+        </nav>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-title">Каталог товаров</div>
+        <div class="p-2 ms-2 me-3 mb-2" style="background: rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: #fff;" onclick="selectAll()">
+            Все товары <span id="allCnt" style="margin-left:5px"></span>
+        </div>
+        <div class="accordion catalog-accordion" id="catalogAccordion"></div>
+        <div style="position: absolute; bottom: 20px; left: 0; width: 100%;">
+            <a href="#" onclick="logout()" class="nav-link text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i> Выход</a>
+        </div>
+    </div>
+
+    <!-- 2. MAIN CONTENT -->
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item text-muted" id="bcCategory">Аналитика</li>
+                        <li class="breadcrumb-item fw-bold text-dark" id="pageTitle">Все товары</li>
+                    </ol>
+                </nav>
+            </div>
+            <button class="btn btn-danger px-4 py-2 fw-bold shadow-sm" id="exportBtn" onclick="exportReport()" disabled><i class="fa-solid fa-file-pdf me-2"></i>Экспорт PDF</button>
+        </div>
+
+        <!-- ДИНАМИКА (STACKED BAR) -->
+        <div class="card p-4">
+            <div class="card-header-custom">
+                <h5 class="card-title"><i class="fa-solid fa-chart-column text-primary me-2"></i>Динамика тональности</h5>
+                <select class="form-select form-select-sm" id="monthSelect" style="width: auto; font-weight: 600;" onchange="updateDynamics()">
+                    <option value="">За всё время (по месяцам)</option>
+                </select>
+            </div>
+            <div style="height: 250px; width: 100%;" id="dynWrap">
+                <canvas id="dynChart"></canvas>
+            </div>
+        </div>
+
+        <!-- КРУГОВАЯ И АСПЕКТЫ -->
+        <div class="row">
+            <!-- Круговая диаграмма -->
+            <div class="col-lg-5">
+                <div class="card p-4 h-100">
+                    <div class="card-header-custom justify-content-center">
+                        <h5 class="card-title">Общая удовлетворенность</h5>
+                    </div>
+                    <!-- Добавлен контейнер с текстом в центре -->
+                    <div class="pie-container">
+                        <canvas id="pieChart"></canvas>
+                        <div class="pie-center-text">
+                            <div class="pie-center-value" id="csatScore">0%</div>
+                            <!-- <div class="pie-center-label">CSAT</div> -->
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-around mt-4 pt-3 border-top">
+                        <div class="text-center">
+                            <div class="fw-bold fs-4 text-success" id="statPos">0</div>
+                            <div class="small text-muted"><span class="stat-circle bg-success"></span>Положительные</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="fw-bold fs-4 text-danger" id="statNeg">0</div>
+                            <div class="small text-muted"><span class="stat-circle bg-danger"></span>Отрицательные</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="fw-bold fs-4 text-warning" id="statMix">0</div>
+                            <div class="small text-muted"><span class="stat-circle bg-warning"></span>Смешанные</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ТОП-5 Аспектов -->
+            <div class="col-lg-7">
+                <div class="card p-4 h-100">
+                    <div class="card-header-custom">
+                        <h5 class="card-title">Ключевые аспекты (ТОП-5)</h5>
+                        <!-- Кнопка разворачивания всех аспектов -->
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#aspectsModal" title="Показать все аспекты">
+                            <i class="fa-solid fa-expand"></i>
+                        </button>
+                    </div>
+                    <div id="aspectsHtml" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ОТЗЫВЫ -->
+        <div class="card p-4 mt-2">
+            <div class="rev-controls border-bottom pb-3">
+                <h5 class="card-title mb-0"><i class="fa-solid fa-comments text-primary me-2"></i>Детальный анализ отзывов</h5>
+                
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle fw-bold" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Показаны: Все отзывы
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                        <li><a class="dropdown-item" href="#" onclick="setFilter('all', 'Все отзывы'); return false;">Все отзывы</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="setFilter('positive', 'Положительные'); return false;">Положительные</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setFilter('negative', 'Негативные'); return false;">Негативные</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setFilter('mixed', 'Смешанные'); return false;">Смешанные</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card-body p-0 pt-4">
+                <div class="rev-grid" id="reviewsGrid"></div>
+                <div class="text-center mt-4">
+                    <button class="btn btn-outline-primary px-4 fw-bold" id="loadMoreBtn" onclick="loadMore()" style="display:none;">Показать больше отзывов</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно "Все аспекты" -->
+    <div class="modal fade" id="aspectsModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold">Все выявленные аспекты</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="modalAspectsBody" style="max-height: 60vh; overflow-y: auto;"></div>
+        </div>
+      </div>
+    </div>
+
+<script>
+if (!localStorage.getItem('token')) window.location.href = '/';
+function logout() { localStorage.clear(); window.location.href = '/'; }
+
+let curId = null;
+let allReviews = [];
+let allAspects = [];
+let curFilter = 'all';
+let visibleCount = 10; 
+
+let pieChart = null;
+let dynChart = null;
+const RU_MON_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const RU_MON_SHORT = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+
+window.addEventListener('DOMContentLoaded', () => { loadProducts(); loadData(null); });
+
+async function loadProducts() {
+    try {
+        const products = await api('/products');
+        const grouped = {};
+        let totalCount = 0;
+        products.forEach(p => {
+            const cat = (p.category || 'Прочее').trim();
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(p);
+            totalCount += (p.review_count || 0);
+        });
+
+        document.getElementById('allCnt').textContent = `(${totalCount})`;
+        const el = document.getElementById('catalogAccordion');
+        el.innerHTML = '';
+        let i = 0;
+        Object.entries(grouped).forEach(([cat, prods]) => {
+            i++;
+            let catCount = prods.reduce((sum, p) => sum + (p.review_count||0), 0);
+            el.insertAdjacentHTML('beforeend', `
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cat${i}">
+                            ${esc(cat)} <span style="margin-left:5px; color:inherit;">(${catCount})</span>
+                        </button>
+                    </h2>
+                    <div id="cat${i}" class="accordion-collapse collapse" data-bs-parent="#catalogAccordion">
+                        <div class="accordion-body">
+                            ${prods.map(p => `
+                                <a href="#" class="product-link" data-id="${p.id}" 
+                                   onclick="selectProduct(${p.id}, '${esc(p.name)}', '${esc(cat)}', this)">
+                                   ${esc(p.name)} <span style="color:inherit;">(${p.review_count||0})</span>
+                                </a>`).join('')}
+                        </div>
+                    </div>
+                </div>`);
+        });
+    } catch(e) { console.error(e); }
+}
+
+function selectAll() {
+    curId = null;
+    document.getElementById('pageTitle').textContent = 'Все товары';
+    document.getElementById('bcCategory').textContent = 'Аналитика';
+    document.getElementById('exportBtn').disabled = true;
+    document.querySelectorAll('.product-link').forEach(b => b.classList.remove('active'));
+    resetFilter(); loadData(null);
+}
+
+function selectProduct(id, name, cat, element) {
+    curId = id;
+    document.getElementById('pageTitle').textContent = name;
+    document.getElementById('bcCategory').textContent = cat;
+    document.getElementById('exportBtn').disabled = false;
+    document.querySelectorAll('.product-link').forEach(b => b.classList.remove('active'));
+    element.classList.add('active');
+    resetFilter(); loadData(id);
+}
+
+async function loadData(pid) {
+    const rq = pid ? `?product_id=${pid}&limit=1000` : '?limit=1000';
+    const aq = pid ? `?product_id=${pid}` : '';
+    try {
+        const [reviews, aspects] = await Promise.all([api('/reviews' + rq), api('/aspects' + aq)]);
+        // Exclude neutral reviews from dashboard (they're stored in DB but not displayed)
+        allReviews = reviews.filter(r => (r.status === 'analyzed' || r.sentiment) && r.sentiment !== 'neutral'); 
+        allAspects = aspects;
+        
+        renderPie(allReviews);
+        renderBarsHtml(aspects.slice(0, 5), 'aspectsHtml');
+        renderBarsHtml(aspects, 'modalAspectsBody'); 
+        
+        buildMonthSelect(allReviews);
+        
+        updateDynamics();
+        renderReviewsGrid();
+    } catch(e) {
+        document.getElementById('reviewsGrid').innerHTML = '<div class="empty-state">Ошибка загрузки данных</div>';
+    }
+}
+
+function renderPie(reviews) {
+    const pos = reviews.filter(r => r.sentiment === 'positive').length;
+    const neg = reviews.filter(r => r.sentiment === 'negative').length;
+    const mix = reviews.filter(r => r.sentiment === 'mixed').length;
+    const total = pos + neg + mix;
+    
+    // Расчет процента удовлетворенности (CSAT)
+    const csat = total > 0 ? Math.round((pos / total) * 100) : 0;
+    document.getElementById('csatScore').textContent = `${csat}%`;
+    
+    document.getElementById('statPos').textContent = pos;
+    document.getElementById('statNeg').textContent = neg;
+    document.getElementById('statMix').textContent = mix;
+    
+    if (pieChart) pieChart.destroy();
+    pieChart = new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Позитивные', 'Негативные', 'Смешанные'],
+            datasets: [{ data: [pos, neg, mix], backgroundColor: ['#22c55e', '#ef4444', '#f59e0b'], borderWidth: 0 }]
+        },
+        options: { 
+            responsive:true, maintainAspectRatio:false, cutout:'75%', 
+            plugins: { legend: { display: false }, tooltip: { enabled: true } }
+        }
+    });
+}
+
+function renderBarsHtml(aspects, targetId) {
+    const el = document.getElementById(targetId);
+    if (!aspects.length) { el.innerHTML = '<div class="empty-state p-2">Нет данных по аспектам</div>'; return; }
+    el.innerHTML = aspects.map(a => {
+        const t = a.total || 1;
+        const pW = ((a.positive||0)/t*100).toFixed(1);
+        const nW = ((a.negative||0)/t*100).toFixed(1);
+        return `
+        <div class="asp-item">
+            <div class="asp-meta">
+                <span>${esc(a.category)}</span>
+                <span class="text-muted"><span class="text-success">${a.positive||0}</span> / <span class="text-danger">${a.negative||0}</span></span>
+            </div>
+            <div class="asp-track">
+                <div style="width:${pW}%; background:#22c55e;"></div>
+                <div style="width:${nW}%; background:#ef4444;"></div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function buildMonthSelect(reviews) {
+    const months = new Set();
+    reviews.forEach(r => { if (r.created_at) months.add(r.created_at.substring(0,7)); });
+    const sel = document.getElementById('monthSelect');
+    sel.innerHTML = '<option value="">За всё время (по месяцам)</option>';
+    
+    const sortedMonths = [...months].sort().reverse();
+    sortedMonths.forEach(m => {
+        const [y, mo] = m.split('-');
+        sel.insertAdjacentHTML('beforeend', `<option value="${m}">${RU_MON_FULL[+mo-1]} ${y}</option>`);
+    });
+    
+    // Автовыбор последнего месяца
+    if (sortedMonths.length > 0) {
+        sel.value = sortedMonths[0];
+    } else {
+        sel.value = "";
+    }
+}
+
+function updateDynamics() {
+    const month = document.getElementById('monthSelect').value;
+    const wrap = document.getElementById('dynWrap');
+    
+    if (dynChart) dynChart.destroy();
+    
+    if (allReviews.length === 0) {
+        wrap.innerHTML = '<div class="empty-state">Нет данных для графика</div>';
+        return;
+    }
+    wrap.innerHTML = '<canvas id="dynChart"></canvas>';
+
+    let labels = [];
+    let posData = [], negData = [], mixData = [];
+
+    if (month) {
+        // Режим: Дни выбранного месяца (1-15 или 16-31)
+        const filtered = allReviews.filter(r => r.created_at && r.created_at.startsWith(month));
+        const byDate = {};
+        let minDay = 31, maxDay = 1;
+
+        filtered.forEach(r => {
+            const d = (r.created_at || '').substring(0, 10);
+            if (d.length < 10) return;
+            const dayNum = parseInt(d.substring(8,10));
+            if (dayNum < minDay) minDay = dayNum;
+            if (dayNum > maxDay) maxDay = dayNum;
+
+            if (!byDate[d]) byDate[d] = { pos:0, neg:0, mix:0 };
+            if (r.sentiment === 'positive') byDate[d].pos++;
+            else if (r.sentiment === 'negative') byDate[d].neg++;
+            else byDate[d].mix++;
+        });
+
+        let startDay = 1, endDay = new Date(month.substring(0,4), month.substring(5,7), 0).getDate();
+        // Логика половинок месяца
+        if (maxDay <= 15) { endDay = 15; } 
+        else if (minDay > 15) { startDay = 16; }
+
+        for (let i = startDay; i <= endDay; i++) {
+            let dayStr = i < 10 ? '0'+i : ''+i;
+            let dateStr = `${month}-${dayStr}`;
+            labels.push(`${i} ${RU_MON_SHORT[parseInt(month.substring(5,7))-1]}`);
+            posData.push(byDate[dateStr] ? byDate[dateStr].pos : 0);
+            negData.push(byDate[dateStr] ? byDate[dateStr].neg : 0);
+            mixData.push(byDate[dateStr] ? byDate[dateStr].mix : 0);
+        }
+    } else {
+        // Режим: За всё время (12 месяцев)
+        labels = RU_MON_SHORT;
+        posData = new Array(12).fill(0);
+        negData = new Array(12).fill(0);
+        mixData = new Array(12).fill(0);
+
+        allReviews.forEach(r => {
+            if(!r.created_at) return;
+            const m = parseInt(r.created_at.substring(5,7)) - 1; // 0 to 11
+            if (m >= 0 && m < 12) {
+                if (r.sentiment === 'positive') posData[m]++;
+                else if (r.sentiment === 'negative') negData[m]++;
+                else mixData[m]++;
+            }
+        });
+    }
+
+    dynChart = new Chart(document.getElementById('dynChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                // Порядок отрисовки: Негатив (низ) -> Смешанные (середина) -> Позитив (верх)
+                { label: 'Отрицательные', data: negData, backgroundColor: '#ef4444', stack: 'Stack 0' },
+                { label: 'Смешанные', data: mixData, backgroundColor: '#f59e0b', stack: 'Stack 0' },
+                { label: 'Положительные', data: posData, backgroundColor: '#22c55e', stack: 'Stack 0' }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', align: 'end', reverse: true } },
+            scales: { 
+                x: { stacked: true, grid: { display: false } },
+                y: { stacked: true, beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+}
+
+function resetFilter() { setFilter('all', 'Все отзывы'); }
+
+function setFilter(f, labelText) { 
+    curFilter = f; 
+    visibleCount = 10; 
+    document.getElementById('filterDropdown').textContent = 'Показаны: ' + labelText;
+    renderReviewsGrid(); 
+}
+
+function loadMore() { visibleCount += 10; renderReviewsGrid(); }
+
+// Защищенное экранирование спецсимволов для Regex
+function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function renderReviewsGrid() {
+    let list = allReviews;
+    if (curFilter !== 'all') list = list.filter(r => r.sentiment === curFilter && r.sentiment !== 'neutral');
+    else list = list.filter(r => r.sentiment !== 'neutral');  // Always exclude neutral
+    
+    const el = document.getElementById('reviewsGrid');
+    const btn = document.getElementById('loadMoreBtn');
+
+    if (!list.length) { el.innerHTML = `<div class="empty-state">Отзывы не найдены</div>`; btn.style.display = 'none'; return; }
+
+    const toShow = list.slice(0, visibleCount);
+    
+    el.innerHTML = toShow.map(r => {
+        let text = esc(r.review_text);
+        let tags = '';
+        
+        if (r.aspects && r.aspects.length > 0) {
+            r.aspects.forEach(a => {
+                if (a.snippet && a.sentiment) {
+                    const cls = a.sentiment === 'positive' ? 'hl-pos' : 'hl-neg';
+                    const icon = a.sentiment === 'positive' ? 'fa-plus' : 'fa-minus';
+                    const badgeCls = a.sentiment === 'positive' ? 'bg-success' : 'bg-danger';
+                    
+                    // Безопасный поиск и подсветка текста независимо от регистра
+                    let safeSnip = esc(a.snippet).trim();
+                    if(safeSnip.length > 3) {
+                        try {
+                            const regex = new RegExp(`(${escapeRegExp(safeSnip)})`, 'gi');
+                            text = text.replace(regex, `<span class="${cls}">$1</span>`);
+                        } catch(e) {}
+                    }
+                    tags += `<span class="badge ${badgeCls} badge-aspect"><i class="fa-solid ${icon} me-1"></i>${esc(a.category)}</span>`;
+                }
+            });
+        }
+        
+        return `
+        <div class="rev-card shadow-sm">
+            <div class="rev-header">
+                <div><div class="rev-author"><i class="fa-solid fa-circle-user text-muted me-2"></i>${esc(r.customer_name||'Аноним')}</div>
+                <div class="rev-date mt-1">${(r.created_at||'').substring(0,10)}</div></div>
+            </div>
+            <div class="rev-text">${text}</div>
+            <div>${tags}</div>
+        </div>`;
+    }).join('');
+    btn.style.display = (visibleCount < list.length) ? 'inline-block' : 'none';
+}
+
+function exportReport() {
+    if (!curId) return;
+    const userEmail = localStorage.getItem('user_email') || '';
+    window.open(`/report/html?product_id=${curId}&user=${encodeURIComponent(userEmail)}`, '_blank');
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+async function api(url) { const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }}); if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+</script>
+</body>
+</html>

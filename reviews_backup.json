@@ -1,0 +1,481 @@
+{
+  "metadata": {
+    "export_date": "2026-04-20 22:05:10",
+    "total_reviews": 19,
+    "product_id": null,
+    "limit": null
+  },
+  "reviews": [
+    {
+      "review_id": 11,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Андрей Лебедев",
+      "review_text": "Отличный ноутбук для учёбы. Лёгкий, не тормозит, хватает мощности для всех задач.",
+      "status": "analyzed",
+      "created_at": "2026-04-18",
+      "sentiment": "positive",
+      "summary": "Лёгкий ноутбук с хорошей производительностью для учёбы.",
+      "aspects": [
+        {
+          "category": "вес_и_габариты",
+          "sentiment": "positive",
+          "snippet": "лёгкий"
+        },
+        {
+          "category": "производительность",
+          "sentiment": "positive",
+          "snippet": "не тормозит"
+        }
+      ]
+    },
+    {
+      "review_id": 2,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Мария Кузнецова",
+      "review_text": "Ноутбук пришёл с дефектом экрана, по гарантии заменили на новый, но это было очень неудобно. В остальном устройство хорошее, производительность на уровне, батарея держит долго.",
+      "status": "analyzed",
+      "created_at": "2026-04-17",
+      "sentiment": "mixed",
+      "summary": "Ноутбук имеет дефект экрана, замена была неудобной, но производительность и батарея хорошие.",
+      "aspects": [
+        {
+          "category": "экран",
+          "sentiment": "negative",
+          "snippet": "Ноутбук пришёл с дефектом экрана"
+        },
+        {
+          "category": "производительность",
+          "sentiment": "positive",
+          "snippet": "производительность на уровне"
+        },
+        {
+          "category": "батарея",
+          "sentiment": "positive",
+          "snippet": "батарея держит долго"
+        }
+      ]
+    },
+    {
+      "review_id": 3,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Алексей Смирнов",
+      "review_text": "Замечательный ноутбук от Asus! Уже не первый раз выбираем технику этой фирмы, и пока что Asus ни разу не подводил. Качество сборки на высоте, ноутбук выглядит очень надежным и удобным в использовании. Взяли в подарок, уверены, что новый владелец будет в восторге. Обязательно дополню отзыв после начала эксплуатации и расскажу о впечатлениях от работы",
+      "status": "analyzed",
+      "created_at": "2026-04-17",
+      "sentiment": "positive",
+      "summary": "Ноутбук Asus с высоким качеством сборки и хорошим внешним видом, удобен в использовании.",
+      "aspects": [
+        {
+          "category": "качество_сборки",
+          "sentiment": "positive",
+          "snippet": "Качество сборки на высоте"
+        },
+        {
+          "category": "дизайн",
+          "sentiment": "positive",
+          "snippet": "ноутбук выглядит очень надежным и удобным в использовании"
+        },
+        {
+          "category": "эргономика",
+          "sentiment": "positive",
+          "snippet": "ноутбук выглядит очень надежным и удобным в использовании"
+        }
+      ]
+    },
+    {
+      "review_id": 9,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Максим Иванов",
+      "review_text": "Очень тихий, почти не слышно работу вентилятора. Экран яркий, цвета передаются точно. Рекомендую.",
+      "status": "analyzed",
+      "created_at": "2026-04-17",
+      "sentiment": "positive",
+      "summary": "Ноутбук с тихим охлаждением и ярким качественным экраном.",
+      "aspects": [
+        {
+          "category": "охлаждение_и_шум",
+          "sentiment": "positive",
+          "snippet": "очень тихий, почти не слышно работу вентилятора"
+        },
+        {
+          "category": "экран",
+          "sentiment": "positive",
+          "snippet": "экран яркий, цвета передаются точно"
+        }
+      ]
+    },
+    {
+      "review_id": 10,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Наталья Козлова",
+      "review_text": "Разочарована скоростью зарядки. Полностью заряжается больше 3 часов. В остальном всё нормально.",
+      "status": "analyzed",
+      "created_at": "2026-04-17",
+      "sentiment": "negative",
+      "summary": "Ноутбук имеет плохую скорость зарядки, остальное нормально.",
+      "aspects": [
+        {
+          "category": "батарея",
+          "sentiment": "negative",
+          "snippet": "Разочарована скоростью зарядки. Полностью заряжается больше 3 часов"
+        }
+      ]
+    },
+    {
+      "review_id": 13,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Павел Сидоров",
+      "review_text": "Клавиатура удобная, но хотелось бы чуть больший экран. В целом, соотношение цена — качество отличное.",
+      "status": "analyzed",
+      "created_at": "2026-04-17",
+      "sentiment": "mixed",
+      "summary": "Ноутбук с удобной клавиатурой и хорошим соотношением цены и качества.",
+      "aspects": [
+        {
+          "category": "эргономика",
+          "sentiment": "positive",
+          "snippet": "клавиатура удобная"
+        },
+        {
+          "category": "экран",
+          "sentiment": "negative",
+          "snippet": "хотелось бы чуть больший экран"
+        },
+        {
+          "category": "цена",
+          "sentiment": "positive",
+          "snippet": "соотношение цена — качество отличное"
+        }
+      ]
+    },
+    {
+      "review_id": 1,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Иван Свиридов",
+      "review_text": "Система установилась буквально за 10 минут, пока все летает, загружается секунд за 10, выключается тоже быстро, небольшая проблема была с wifi, но скачал драйвера с сайта производителя и все заработало корректно",
+      "status": "analyzed",
+      "created_at": "2026-04-16",
+      "sentiment": "mixed",
+      "summary": "Ноутбук с быстрой загрузкой и проблемами Wi-Fi, после установки драйвера всё заработало.",
+      "aspects": [
+        {
+          "category": "производительность",
+          "sentiment": "positive",
+          "snippet": "загружается секунд за 10"
+        },
+        {
+          "category": "беспроводная_сеть",
+          "sentiment": "negative",
+          "snippet": "небольшая проблема была с wifi"
+        }
+      ]
+    },
+    {
+      "review_id": 5,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Дмитрий Васильев",
+      "review_text": "Лёгкий и компактный, удобно брать с собой в поездки. Батареи хватает на весь рабочий день. Очень доволен.",
+      "status": "analyzed",
+      "created_at": "2026-04-16",
+      "sentiment": "positive",
+      "summary": "Лёгкий и компактный ноутбук с хорошей автономностью работы.",
+      "aspects": [
+        {
+          "category": "вес_и_габариты",
+          "sentiment": "positive",
+          "snippet": "лёгкий и компактный"
+        },
+        {
+          "category": "батарея",
+          "sentiment": "positive",
+          "snippet": "батареи хватает на весь рабочий день"
+        }
+      ]
+    },
+    {
+      "review_id": 6,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Елена Орлова",
+      "review_text": "Красивый дизайн, качественный экран. Но клавиатура немного туговата, пальцы устают при долгой печати.",
+      "status": "analyzed",
+      "created_at": "2026-04-16",
+      "sentiment": "mixed",
+      "summary": "Ноутбук с хорошим дизайном и экраном, но плохой эргономикой клавиатуры.",
+      "aspects": [
+        {
+          "category": "дизайн",
+          "sentiment": "positive",
+          "snippet": "красивый дизайн"
+        },
+        {
+          "category": "экран",
+          "sentiment": "positive",
+          "snippet": "качественный экран"
+        },
+        {
+          "category": "эргономика",
+          "sentiment": "negative",
+          "snippet": "клавиатура немного туговата, пальцы устают при долгой печати"
+        }
+      ]
+    },
+    {
+      "review_id": 7,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Сергей Новиков",
+      "review_text": "Быстрый, тихий, не греется даже при длительной работе. Идеальный вариант для офиса и дома.",
+      "status": "analyzed",
+      "created_at": "2026-04-16",
+      "sentiment": "positive",
+      "summary": "Ноутбук с хорошим охлаждением и тихим работой, подходит для офиса и дома.",
+      "aspects": [
+        {
+          "category": "охлаждение_и_шум",
+          "sentiment": "positive",
+          "snippet": "не греется даже при длительной работе"
+        },
+        {
+          "category": "звук",
+          "sentiment": "positive",
+          "snippet": "тихий"
+        }
+      ]
+    },
+    {
+      "review_id": 12,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Ирина Волкова",
+      "review_text": "Экран немного бликует на солнце, неудобно работать на улице. В помещении всё отлично.",
+      "status": "analyzed",
+      "created_at": "2026-04-16",
+      "sentiment": "negative",
+      "summary": "Ноутбук имеет блики на экране, что делает его неудобным для использования на улице.",
+      "aspects": [
+        {
+          "category": "экран",
+          "sentiment": "negative",
+          "snippet": "экран немного бликует на солнце"
+        }
+      ]
+    },
+    {
+      "review_id": 4,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Ольга Петрова",
+      "review_text": "Получила вчера ноутбук, включила , открылся биос, и сразу начал шуметь , как будто взлетает, такой шум вентилятора меня не устраивает, как будто ему много лет,а также греется. хотя он пустой и никаких задач не выполняет. Потрачено время на ожидание ноутбука,он мне нужен был для работы.",
+      "status": "analyzed",
+      "created_at": "2026-04-15",
+      "sentiment": "negative",
+      "summary": "Ноутбук шумит и греется при пустой нагрузке, что не устраивает.",
+      "aspects": [
+        {
+          "category": "охлаждение_и_шум",
+          "sentiment": "negative",
+          "snippet": "начал шуметь, как будто взлетает"
+        },
+        {
+          "category": "охлаждение_и_шум",
+          "sentiment": "negative",
+          "snippet": "греется"
+        }
+      ]
+    },
+    {
+      "review_id": 8,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Анна Соколова",
+      "review_text": "Не понравилось, что нет разъёма для карт памяти. Приходится использовать переходник. В остальном ноутбук хороший.",
+      "status": "analyzed",
+      "created_at": "2026-04-15",
+      "sentiment": "negative",
+      "summary": "Ноутбук имеет недостаток в портах и в остальном оценивается положительно.",
+      "aspects": [
+        {
+          "category": "порты_и_разъемы",
+          "sentiment": "negative",
+          "snippet": "нет разъёма для карт памяти"
+        },
+        {
+          "category": "комплектация",
+          "sentiment": "negative",
+          "snippet": "приходится использовать переходник"
+        }
+      ]
+    },
+    {
+      "review_id": 17,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Роман Волков",
+      "review_text": "Тихий, компактный, долго держит заряд. Единственный недостаток — мало встроенных портов.",
+      "status": "analyzed",
+      "created_at": "2026-04-14",
+      "sentiment": "mixed",
+      "summary": "Компактный ноутбук с длительным автономным режимом и недостатком портов.",
+      "aspects": [
+        {
+          "category": "вес_и_габариты",
+          "sentiment": "positive",
+          "snippet": "компактный"
+        },
+        {
+          "category": "батарея",
+          "sentiment": "positive",
+          "snippet": "длительно держит заряд"
+        },
+        {
+          "category": "порты_и_разъемы",
+          "sentiment": "negative",
+          "snippet": "мало встроенных портов"
+        }
+      ]
+    },
+    {
+      "review_id": 18,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Виктория Морозова",
+      "review_text": "Быстрая работа, стильный дизайн. За свои деньги — лучший выбор!",
+      "status": "analyzed",
+      "created_at": "2026-04-14",
+      "sentiment": "positive",
+      "summary": "Ноутбук с быстрой работой и стильным дизайном, рекомендован за соотношение цена/качество.",
+      "aspects": [
+        {
+          "category": "производительность",
+          "sentiment": "positive",
+          "snippet": "быстрая работа"
+        },
+        {
+          "category": "дизайн",
+          "sentiment": "positive",
+          "snippet": "стильный дизайн"
+        },
+        {
+          "category": "цена",
+          "sentiment": "positive",
+          "snippet": "за свои деньги — лучший выбор"
+        }
+      ]
+    },
+    {
+      "review_id": 19,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Георгий Белов",
+      "review_text": "Греется под нагрузкой, но это ожидаемо для тонкого ноутбука. Производительность радует.",
+      "status": "analyzed",
+      "created_at": "2026-04-14",
+      "sentiment": "positive",
+      "summary": "Ноутбук с хорошей производительностью и ожидаемым нагревом под нагрузкой.",
+      "aspects": [
+        {
+          "category": "производительность",
+          "sentiment": "positive",
+          "snippet": "Производительность радует"
+        }
+      ]
+    },
+    {
+      "review_id": 14,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Мария Смирнова",
+      "review_text": "Загружается за 7 секунд — это просто фантастика! Единственный минус — иногда шумит вентилятор под нагрузкой.",
+      "status": "analyzed",
+      "created_at": "2026-04-13",
+      "sentiment": "mixed",
+      "summary": "Ноутбук с быстрой загрузкой и шумным охлаждением.",
+      "aspects": [
+        {
+          "category": "производительность",
+          "sentiment": "positive",
+          "snippet": "Загружается за 7 секунд"
+        },
+        {
+          "category": "охлаждение_и_шум",
+          "sentiment": "negative",
+          "snippet": "иногда шумит вентилятор под нагрузкой"
+        }
+      ]
+    },
+    {
+      "review_id": 15,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Иван Петров",
+      "review_text": "Для работы с тяжёлыми программами подходит идеально. Корпус прочный, ничего не люфтит.",
+      "status": "analyzed",
+      "created_at": "2026-04-13",
+      "sentiment": "positive",
+      "summary": "Ноутбук хорошо справляется с тяжёлыми программами и имеет прочный корпус.",
+      "aspects": [
+        {
+          "category": "производительность",
+          "sentiment": "positive",
+          "snippet": "подходит идеально"
+        },
+        {
+          "category": "дизайн",
+          "sentiment": "positive",
+          "snippet": "корпус прочный"
+        }
+      ]
+    },
+    {
+      "review_id": 16,
+      "product_id": 1,
+      "product_name": "Asus Zenbook 14",
+      "product_category": "Ноутбуки",
+      "customer_name": "Ольга Кузнецова",
+      "review_text": "Цветопередача отличная, глаза не устают. Жаль, что нет подсветки клавиатуры — неудобно работать вечером.",
+      "status": "analyzed",
+      "created_at": "2026-04-13",
+      "sentiment": "mixed",
+      "summary": "Ноутбук с отличной цветопередачей, но без подсветки клавиатуры.",
+      "aspects": [
+        {
+          "category": "экран",
+          "sentiment": "positive",
+          "snippet": "Цветопередача отличная"
+        },
+        {
+          "category": "эргономика",
+          "sentiment": "negative",
+          "snippet": "жаль, что нет подсветки клавиатуры"
+        }
+      ]
+    }
+  ]
+}

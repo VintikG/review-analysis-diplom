@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка CSV — Анализ отзывов</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #f1f5f9; font-family: 'Onest', sans-serif; overflow-x: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 280px; height: 100vh; background-color: #0f172a; color: #f8fafc; position: fixed; top: 0; left: 0; padding-top: 20px; }
+        .main-content { margin-left: 280px; padding: 40px; display: flex; justify-content: center; }
+        .nav-link { color: #94a3b8; padding: 12px 20px; border-radius: 8px; font-weight: 500; margin: 0 15px 5px; transition: 0.2s; }
+        .nav-link:hover, .nav-link.active { background-color: #1e293b; color: #fff; }
+        
+        .upload-container { width: 100%; max-width: 700px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        
+        .drop-zone { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 50px 20px; text-align: center; background-color: #ffffff; transition: 0.3s; cursor: pointer; }
+        .drop-zone:hover, .drop-zone.drag { border-color: #3b82f6; background-color: #f0fdf4; }
+        .drop-icon { font-size: 48px; color: #94a3b8; margin-bottom: 15px; }
+        #fileInput { display: none; }
+
+        .progress-wrap { display: none; margin-bottom: 20px; }
+        .result-box { display: none; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .result-box.ok { background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .result-box.err { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- <h4 class="text-center fw-bold mb-4 px-3 text-white"><i class="fa-solid fa-brain text-primary me-2"></i></h4> -->
+        <nav class="nav flex-column">
+            <a class="nav-link active" href="/upload"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Загрузка CSV</a>
+            <a class="nav-link" href="/dashboard"><i class="fa-solid fa-chart-pie me-2"></i> Аналитика отзывов</a>
+        </nav>
+        <div style="position: absolute; bottom: 20px; left: 0; width: 100%;">
+            <a href="#" onclick="logout()" class="nav-link text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i> Выход</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="upload-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold mb-0">Загрузка данных</h2>
+                <span class="badge bg-light text-dark border p-2" id="userChip"></span>
+            </div>
+
+            <div class="alert alert-primary shadow-sm" style="font-size: 14px;">
+                <i class="fa-solid fa-circle-info me-2"></i> <strong>Требования к CSV:</strong> столбцы <code>product_name</code>, <code>category</code>, <code>customer_name</code>, <code>review_text</code>, <code>created_at</code>. Анализ может занять время.
+            </div>
+
+            <div class="card p-4">
+                <div id="dropZone" class="drop-zone mb-4" onclick="triggerSelect()">
+                    <i class="fa-solid fa-file-csv drop-icon"></i>
+                    <h5 class="fw-bold text-dark">Перетащите CSV-файл сюда</h5>
+                    <p class="text-muted small mb-0">или нажмите для выбора файла на ПК</p>
+                </div>
+                <input type="file" id="fileInput" accept=".csv">
+
+                <div class="progress-wrap" id="progressWrap">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span id="progressText">Отправка файла на сервер...</span>
+                        <span id="progressPct">0%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div id="progressFill" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="result-box" id="resultBox">
+                    <h6 class="fw-bold" id="resultTitle"></h6>
+                    <div id="resultStat" style="font-size: 14px; margin-bottom: 10px;"></div>
+                    <div id="errList" style="font-size: 12px; max-height: 100px; overflow-y: auto;"></div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary px-4 fw-bold" id="uploadBtn" onclick="triggerSelect()">Выбрать файл</button>
+                    <!-- <a href="/dashboard" class="btn btn-outline-secondary px-4 fw-bold">Перейти в Дашборд</a> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    if (!localStorage.getItem('token')) window.location.href = '/';
+    document.getElementById('userChip').textContent = localStorage.getItem('user_email') || 'Пользователь';
+
+    function logout() { localStorage.clear(); window.location.href = '/'; }
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressW = document.getElementById('progressWrap');
+    const progressF = document.getElementById('progressFill');
+    const progressT = document.getElementById('progressText');
+    const progressP = document.getElementById('progressPct');
+    const resultBox = document.getElementById('resultBox');
+
+    function triggerSelect() { fileInput.click(); }
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault(); dropZone.classList.remove('drag');
+        const f = e.dataTransfer.files[0];
+        if (f && f.name.endsWith('.csv')) startUpload(f);
+        else alert('Пожалуйста, выберите .csv файл');
+    });
+    fileInput.addEventListener('change', e => { if (e.target.files[0]) startUpload(e.target.files[0]); });
+
+    async function startUpload(file) {
+        uploadBtn.disabled = true; resultBox.style.display = 'none';
+        progressW.style.display = 'block';
+        progressT.textContent = `Загружаю файл «${file.name}»...`;
+        progressF.style.width = '2%'; progressP.textContent = '2%';
+
+        try {
+            const fd = new FormData(); 
+            fd.append('file', file);
+            
+            // Отправляем файл на сервер (быстро добавляет в БД)
+            const uploadRes = await fetch('/upload/csv/stream', { method: 'POST', body: fd });
+            
+            if (!uploadRes.ok) {
+                throw new Error(`HTTP ${uploadRes.status}`);
+            }
+
+            const uploadData = await uploadRes.json();
+            
+            if (!uploadData.success) {
+                throw new Error(uploadData.error || 'Ошибка загрузки файла');
+            }
+
+            const totalReviews = uploadData.added;
+            progressT.textContent = `Начинаю анализ ${totalReviews} отзывов...`;
+            progressF.style.width = '10%'; progressP.textContent = '10%';
+
+            // Polling для проверки прогресса анализа
+            let lastAnalyzed = 0;
+            const startTime = Date.now();
+            let progressCheckCount = 0;
+            
+            const progressInterval = setInterval(async () => {
+                try {
+                    progressCheckCount++;
+                    const progressRes = await fetch('/upload/progress');
+                    const progressData = await progressRes.json();
+                    
+                    const analyzed = progressData.analyzed;
+                    const percentage = Math.min(progressData.percentage, 99);
+                    
+                    progressF.style.width = percentage + '%';
+                    progressP.textContent = percentage + '%';
+                    
+                    // Обновляем статус
+                    if (analyzed > lastAnalyzed) {
+                        progressT.textContent = `Анализирую... ${analyzed}/${totalReviews} отзывов`;
+                        lastAnalyzed = analyzed;
+                    }
+                    
+                    // Прекращаем polling когда все готово
+                    if (analyzed >= totalReviews) {
+                        clearInterval(progressInterval);
+                        
+                        // Финальный результат
+                        progressF.style.width = '100%';
+                        progressP.textContent = '100%';
+                        progressT.textContent = 'Завершено!';
+                        
+                        // Показываем результат
+                        const finalResult = {
+                            success: true,
+                            added: uploadData.added,
+                            analyzed: analyzed,
+                            errors: uploadData.errors || []
+                        };
+                        showResult(finalResult);
+                    }
+                    
+                    // Timeout: если прошло более 5 минут и анализ зависает, показываем текущий результат
+                    if (progressCheckCount > 600) { // 600 * 500ms = 5 минут
+                        clearInterval(progressInterval);
+                        progressF.style.width = '100%';
+                        progressP.textContent = '100%';
+                        progressT.textContent = 'Завершено (timeout)';
+                        
+                        const timeoutResult = {
+                            success: true,
+                            added: uploadData.added,
+                            analyzed: analyzed,
+                            errors: uploadData.errors || []
+                        };
+                        showResult(timeoutResult);
+                    }
+                } catch(e) {
+                    // Если polling ошибка, игнорируем и продолжаем
+                    console.log('Polling error:', e);
+                }
+            }, 500); // Проверяем каждые 500ms
+
+        } catch(e) {
+            progressW.style.display = 'none';
+            showResult({ success: false, error: 'Ошибка: ' + e.message });
+        } finally {
+            uploadBtn.disabled = false; 
+            fileInput.value = '';
+        }
+    }
+
+    function showResult(data) {
+        resultBox.style.display = 'block';
+        progressW.style.display = 'none';
+        
+        if (data.success || (data.added !== undefined)) {
+            resultBox.className = 'result-box ok';
+            document.getElementById('resultTitle').innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Файл обработан успешно';
+            
+            const analyzed = data.analyzed || 0;
+            const added = data.added || 0;
+            
+            document.getElementById('resultStat').innerHTML = `✓ Добавлено в БД: <b>${added}</b> отзывов<br>✓ Проанализировано ИИ: <b>${analyzed}</b> отзывов`;
+            
+            // Показываем ошибки если они есть
+            if (data.errors && data.errors.length > 0) {
+                let errHtml = '<details style="margin-top: 10px;"><summary style="cursor:pointer;color:#dc2626;font-weight:600">⚠️ Показать ошибки (' + data.errors.length + ')</summary><div style="margin-top:8px;">';
+                errHtml += data.errors.map(e => `<small>• ${e}</small>`).join('<br>');
+                errHtml += '</div></details>';
+                document.getElementById('errList').innerHTML = errHtml;
+            } else {
+                document.getElementById('errList').innerHTML = '';
+            }
+        } else {
+            resultBox.className = 'result-box err';
+            document.getElementById('resultTitle').innerHTML = '<i class="fa-solid fa-circle-xmark me-1"></i> Ошибка загрузки';
+            document.getElementById('resultStat').textContent = data.error || 'Неизвестная ошибка';
+            document.getElementById('errList').innerHTML = '';
+        }
+    }
+</script>
+</body>
+</html>
