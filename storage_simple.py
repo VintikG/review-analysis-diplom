@@ -66,16 +66,16 @@ class DB:
     def init_test_user(self):
         conn = self._connect()
         existing = conn.execute(
-            "SELECT id FROM users WHERE email = ?", ("user",)
+            "SELECT id FROM users WHERE email = ?", ("Ivanov@mail.ru",)
         ).fetchone()
         if not existing:
             hashed = generate_password_hash("user")
             conn.execute(
                 "INSERT INTO users (email, password, full_name) VALUES (?, ?, ?)",
-                ("user", hashed, "Test User"),
+                ("Ivanov@mail.ru", hashed, "Test User"),
             )
             conn.commit()
-            print("✓ Тестовый пользователь создан (login: user  password: user)")
+            print("✓ Тестовый пользователь создан (login: Ivanov@mail.ru  password: user)")
         conn.close()
 
     def exec(self, query: str, params=None) -> int:

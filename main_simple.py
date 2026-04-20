@@ -489,18 +489,20 @@ def get_report_html(product_id: int, user: str = ""):
                a.sentiment, a.summary, a.aspects
         FROM reviews r
         LEFT JOIN analysis_results a ON a.review_id = r.id
-        WHERE r.product_id = ?
+        WHERE r.product_id = ? AND a.sentiment != 'neutral'
         ORDER BY r.created_at DESC
         """,
         (product_id,),
     )
 
-    sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0, "mixed": 0}
+    sentiment_counts = {"positive": 0, "negative": 0, "mixed": 0}
     aspect_agg: dict[str, dict] = {}
-    snippet_rows: list[dict] = []
+    
+    # Собираем сырые цитаты для последующей умной сортировки
+    raw_snippets =[]
 
     for r in reviews:
-        s = r.get("sentiment") or "neutral"
+        s = r.get("sentiment") or "mixed"
         if s in sentiment_counts:
             sentiment_counts[s] += 1
 
@@ -508,42 +510,68 @@ def get_report_html(product_id: int, user: str = ""):
         try:
             aspects = json.loads(raw) if isinstance(raw, str) else (raw or [])
         except Exception:
-            aspects = []
+            aspects =[]
 
         for asp in aspects:
-            cat  = asp.get("category", "")
-            sent = asp.get("sentiment", "neutral")
-            snip = asp.get("snippet", "")
+            cat  = asp.get("category", "").strip()
+            sent = asp.get("sentiment", "mixed")
+            snip = asp.get("snippet", "").strip()
+            
             if not cat:
                 continue
+                
             if cat not in aspect_agg:
-                aspect_agg[cat] = {"positive": 0, "negative": 0, "neutral": 0, "mixed": 0, "total": 0}
+                aspect_agg[cat] = {"positive": 0, "negative": 0, "mixed": 0, "total": 0}
+            
             aspect_agg[cat][sent] = aspect_agg[cat].get(sent, 0) + 1
             aspect_agg[cat]["total"] += 1
-            if snip and len(snippet_rows) < 8:
-                snippet_rows.append(
-                    {"aspect": cat, "sentiment": sent, "snippet": snip, "author": r.get("customer_name", "")}
-                )
+            
+            if snip:
+                raw_snippets.append({
+                    "aspect": cat, 
+                    "sentiment": sent, 
+                    "snippet": snip, 
+                    "author": r.get("customer_name", "")
+                })
 
+    # Сортировка ТОП-5 аспектов для графиков (по общему количеству упоминаний)
     top5 = sorted(aspect_agg.items(), key=lambda x: x[1]["total"], reverse=True)[:5]
-    total = len(reviews)
+    
+    # Умная сортировка цитат (Сначала негатив по популярности аспекта, затем позитив)
+    # 1. Отбираем только negative и positive
+    filtered_snippets =[s for s in raw_snippets if s["sentiment"] in ["negative", "positive"]]
+    
+    # 2. Сортируем: 
+    # приоритет 1: sentiment (negative идет первым, т.к. "n" < "p" в алфавите)
+    # приоритет 2: частота негативных упоминаний этого аспекта (по убыванию)
+    filtered_snippets.sort(
+        key=lambda x: (
+            0 if x["sentiment"] == "negative" else 1,  # Сначала негативные (0), потом позитивные (1)
+            -aspect_agg[x["aspect"]].get("negative", 0) if x["sentiment"] == "negative" else -aspect_agg[x["aspect"]].get("positive", 0)
+        )
+    )
+    
+    # Берем только первые 10 цитат, чтобы влезло на А4
+    final_snippets = filtered_snippets[:10]
+
+    total = sum(sentiment_counts.values())
     today = datetime.now().strftime("%d.%m.%Y")
 
     # Build HTML
-    html = _build_report_html(product, total, today, sentiment_counts, top5, snippet_rows, product_id, user)
+    html = _build_report_html(product, total, today, sentiment_counts, top5, final_snippets, product_id, user)
     return HTMLResponse(content=html)
 
 
 # ── Report HTML builder ──────────────────────
 def _build_report_html(product, total, today, sent, top5, snippets, product_id=0, user=""):
     def badge(s):
-        colors = {"positive":"#22c55e","negative":"#ef4444","neutral":"#94a3b8","mixed":"#f59e0b"}
-        labels = {"positive":"Позитивная","negative":"Негативная","neutral":"Нейтральная","mixed":"Смешанная"}
+        colors = {"positive":"#22c55e","negative":"#ef4444"}
+        labels = {"positive":"Положительная","negative":"Отрицательная"}
         return f'<span style="color:{colors.get(s,"#94a3b8")};font-weight:600">{labels.get(s,s)}</span>'
 
-    # Format user for display (Иванов И.А. style if possible)
     user_display = user or "пользователь"
 
+    # Рендеринг строк таблицы цитат
     snippet_rows_html = "".join(f"""
         <tr>
           <td style="font-weight:600;color:#1e293b">{sn['aspect']}</td>
@@ -551,30 +579,35 @@ def _build_report_html(product, total, today, sent, top5, snippets, product_id=0
           <td style="color:#334155">«{sn['snippet']}»</td>
         </tr>""" for sn in snippets)
 
-    # Donut: pos / neg / mix (no neutral)
+    # Данные для круговой диаграммы
     pie_data = json.dumps([sent["positive"], sent["negative"], sent["mixed"]])
+    
+    # Расчет CSAT для центра круга
+    csat = round((sent["positive"] / total) * 100) if total > 0 else 0
 
-    # Aspect stacked bars — pure inline-styled HTML (prints reliably, no canvas)
+    # Рендеринг ТОП-5 аспектов (Только Позитив и Негатив)
     asp_html = ""
     for cat, data in top5:
-        t  = data.get("total", 1) or 1
-        pw = round(data.get("positive", 0) / t * 100, 1)
-        nw = round(data.get("negative", 0) / t * 100, 1)
-        mw = round(data.get("mixed",    0) / t * 100, 1)
+        # Для полоски берем только сумму позитива и негатива
+        bar_total = data.get("positive", 0) + data.get("negative", 0)
+        if bar_total == 0: 
+            continue # Пропускаем, если были только смешанные
+            
+        pw = round(data.get("positive", 0) / bar_total * 100, 1)
+        nw = round(data.get("negative", 0) / bar_total * 100, 1)
+        
         asp_html += f"""
-        <div style="margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;font-family:'Onest',sans-serif">
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;font-family:'Onest',sans-serif">
             <span style="font-weight:700;color:#1e293b">{cat}</span>
             <span>
               <span style="color:#16a34a;font-weight:700">{data.get('positive',0)}</span> /
-              <span style="color:#dc2626;font-weight:700">{data.get('negative',0)}</span> /
-              <span style="color:#d97706;font-weight:700">{data.get('mixed',0)}</span>
+              <span style="color:#dc2626;font-weight:700">{data.get('negative',0)}</span>
             </span>
           </div>
-          <div style="display:flex;height:9px;border-radius:4px;overflow:hidden;background:#e2e8f0">
+          <div style="display:flex;height:10px;border-radius:4px;overflow:hidden;background:#e2e8f0">
             <div style="width:{pw}%;background:#22c55e;height:100%"></div>
             <div style="width:{nw}%;background:#ef4444;height:100%"></div>
-            <div style="width:{mw}%;background:#f59e0b;height:100%"></div>
           </div>
         </div>"""
 
@@ -623,9 +656,15 @@ body{{
 .psub{{font-size:11px;color:#64748b;margin-bottom:20px}}
 h3{{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;
     letter-spacing:.5px;margin:0 0 10px}}
-.charts-row{{display:grid;grid-template-columns:168px 1fr;gap:18px;margin-bottom:20px}}
+.charts-row{{display:grid;grid-template-columns:180px 1fr;gap:20px;margin-bottom:20px}}
 .cbox{{background:#f8fafc;border-radius:8px;padding:14px;border:1px solid #e2e8f0}}
-.donut-wrap{{position:relative;height:128px;margin-bottom:10px}}
+
+/* Контейнер для круговой диаграммы с CSAT в центре */
+.pie-container {{ position:relative;height:140px;margin-bottom:10px;display:flex;justify-content:center;align-items:center; }}
+.pie-center-text {{ position:absolute;text-align:center;pointer-events:none; }}
+.pie-center-value {{ font-size:22px;font-weight:700;color:#1e293b;line-height:1; }}
+.pie-center-label {{ font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase; }}
+
 .dl{{display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px}}
 .dd{{width:8px;height:8px;border-radius:50%;flex-shrink:0}}
 .dn{{flex:1;color:#475569}}
@@ -682,19 +721,24 @@ tr:nth-child(even) td{{background:#f8fafc}}
   <div class="charts-row">
     <div class="cbox">
       <h3>1. Тональность</h3>
-      <div class="donut-wrap"><canvas id="pieChart"></canvas></div>
-      <div class="dl"><span class="dd" style="background:#22c55e"></span><span class="dn">Позитивные</span><span class="dv" style="color:#16a34a">{sent['positive']}</span></div>
-      <div class="dl"><span class="dd" style="background:#ef4444"></span><span class="dn">Негативные</span><span class="dv" style="color:#dc2626">{sent['negative']}</span></div>
+      <div class="pie-container">
+        <canvas id="pieChart"></canvas>
+        <div class="pie-center-text">
+            <div class="pie-center-value">{csat}%</div>
+        </div>
+      </div>
+      <div class="dl"><span class="dd" style="background:#22c55e"></span><span class="dn">Положительные</span><span class="dv" style="color:#16a34a">{sent['positive']}</span></div>
+      <div class="dl"><span class="dd" style="background:#ef4444"></span><span class="dn">Отрицательные</span><span class="dv" style="color:#dc2626">{sent['negative']}</span></div>
       <div class="dl"><span class="dd" style="background:#f59e0b"></span><span class="dn">Смешанные</span><span class="dv" style="color:#d97706">{sent['mixed']}</span></div>
     </div>
 
     <div class="cbox">
-      <h3>2. Топ-5 аспектов &nbsp;<span style="font-weight:400;color:#94a3b8">(+ позитивных / − негативных / ± смешанных)</span></h3>
+      <h3>2. Топ-5 аспектов &nbsp;<span style="font-weight:400;color:#94a3b8">(+ положительных / − отрицательных)</span></h3>
       {asp_html or '<div style="color:#94a3b8;font-size:12px;padding:8px 0">Нет данных</div>'}
     </div>
   </div>
 
-  <h3>3. Подтверждающие выдержки из отзывов</h3>
+  <h3>3. Подтверждающие выдержки из отзывов (Проблемы)</h3>
   <table>
     <thead><tr><th style="width:16%">Аспект</th><th style="width:16%">Тональность</th><th>Цитата клиента</th></tr></thead>
     <tbody>{snippet_rows_html or '<tr><td colspan="3" style="color:#94a3b8;text-align:center;padding:16px">Нет данных</td></tr>'}</tbody>
@@ -710,7 +754,7 @@ new Chart(document.getElementById('pieChart').getContext('2d'), {{
   type:'doughnut',
   data:{{datasets:[{{data:{pie_data},backgroundColor:['#22c55e','#ef4444','#f59e0b'],borderWidth:0}}]}},
   options:{{
-    responsive:true,maintainAspectRatio:false,cutout:'68%',
+    responsive:true,maintainAspectRatio:false,cutout:'70%',
     plugins:{{legend:{{display:false}},tooltip:{{enabled:false}}}}
   }}
 }});
